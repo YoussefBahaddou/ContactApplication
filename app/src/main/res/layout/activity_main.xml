@@ -99,4 +99,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <Button
+        android:id="@+id/btnSaveToServer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save All Contacts to Server"
+        android:layout_margin="16dp" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

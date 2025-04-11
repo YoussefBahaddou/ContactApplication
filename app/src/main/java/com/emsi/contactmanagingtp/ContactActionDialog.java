@@ -66,7 +66,7 @@ public class ContactActionDialog extends Dialog {
     }
     
     private void makePhoneCall() {
-        String phoneNumber = contact.getPhoneNumber().trim();
+        String phoneNumber = contact.getNumber().trim();
         if (phoneNumber.isEmpty()) {
             Toast.makeText(context, "No phone number available", Toast.LENGTH_SHORT).show();
             return;
@@ -78,7 +78,7 @@ public class ContactActionDialog extends Dialog {
     }
     
     private void sendSMS() {
-        String phoneNumber = contact.getPhoneNumber().trim();
+        String phoneNumber = contact.getNumber().trim();
         if (phoneNumber.isEmpty()) {
             Toast.makeText(context, "No phone number available", Toast.LENGTH_SHORT).show();
             return;

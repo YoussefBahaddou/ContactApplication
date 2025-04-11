@@ -41,7 +41,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
     public void onBindViewHolder(@NonNull ContactViewHolder holder, int position) {
         Contact contact = contactList.get(position);
         holder.nameTextView.setText(contact.getName());
-        holder.phoneTextView.setText(contact.getPhoneNumber());
+        holder.phoneTextView.setText(contact.getNumber());
 
         // Set contact photo if available
         if (contact.getPhotoUri() != null && !contact.getPhotoUri().isEmpty()) {
@@ -100,7 +100,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
                 for (Contact contact : contactListFull) {
                     if (contact.getName().toLowerCase().contains(filterPattern) ||
-                            contact.getPhoneNumber().contains(filterPattern)) {
+                            contact.getNumber().toLowerCase().contains(filterPattern)) {
                         filteredList.add(contact);
                     }
                 }
