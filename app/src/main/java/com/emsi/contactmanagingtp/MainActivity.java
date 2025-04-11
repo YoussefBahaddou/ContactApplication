@@ -6,8 +6,15 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -29,6 +36,10 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private ContactAdapter adapter;
     private ProgressBar progressBar;
+    private EditText searchEditText;
+    private ImageButton searchButton;
+    private ImageButton clearButton;
+    private TextView noResultsTextView;
     private List<Contact> contactList = new ArrayList<>();
 
     @Override
@@ -38,13 +49,74 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.contacts_recycler_view);
         progressBar = findViewById(R.id.loading_progress);
+        searchEditText = findViewById(R.id.search_edit_text);
+        searchButton = findViewById(R.id.search_button);
+        clearButton = findViewById(R.id.clear_button);
+        noResultsTextView = findViewById(R.id.no_results_text);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ContactAdapter(this, contactList);
+        adapter = new ContactAdapter(this, contactList, noResultsTextView);
         recyclerView.setAdapter(adapter);
+
+        // Set up search functionality
+        setupSearchFunctionality();
 
         // Request all necessary permissions
         requestRequiredPermissions();
+    }
+
+    private void setupSearchFunctionality() {
+        // Search button click listener
+        searchButton.setOnClickListener(v -> {
+            performSearch();
+        });
+
+        // Clear button click listener
+        clearButton.setOnClickListener(v -> {
+            searchEditText.setText("");
+            clearButton.setVisibility(View.GONE);
+            adapter.getFilter().filter("");
+        });
+
+        // Search on enter key
+        searchEditText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                performSearch();
+                return true;
+            }
+            return false;
+        });
+
+        // Real-time search as user types and show/hide clear button
+        searchEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Not needed
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Filter contacts as user types
+                adapter.getFilter().filter(s);
+                
+                // Show/hide clear button
+                if (s.length() > 0) {
+                    clearButton.setVisibility(View.VISIBLE);
+                } else {
+                    clearButton.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Not needed
+            }
+        });
+    }
+
+    private void performSearch() {
+        String query = searchEditText.getText().toString().trim();
+        adapter.getFilter().filter(query);
     }
 
     private void requestRequiredPermissions() {
@@ -119,43 +191,43 @@ public class MainActivity extends AppCompatActivity {
         ContentResolver contentResolver = getContentResolver();
         
         Cursor cursor = contentResolver.query(
-                ContactsContract.Contacts.CONTENT_URI,
-                null,
-                null,
-                null,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
-        );
+            ContactsContract.Contacts.CONTENT_URI,
+            null,
+            null,
+            null,
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+    );
 
-        if (cursor != null && cursor.getCount() > 0) {
-            while (cursor.moveToNext()) {
-                String id = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID));
-                String name = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-                String photoUri = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.PHOTO_URI));
-                
-                if (Integer.parseInt(cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
-                    Cursor phoneCursor = contentResolver.query(
-                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                            null,
-                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
-                            new String[]{id},
-                            null
-                    );
+    if (cursor != null && cursor.getCount() > 0) {
+        while (cursor.moveToNext()) {
+            String id = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID));
+            String name = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+            String photoUri = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.PHOTO_URI));
+            
+            if (Integer.parseInt(cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
+                Cursor phoneCursor = contentResolver.query(
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                        null,
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                        new String[]{id},
+                        null
+                );
 
-                    if (phoneCursor != null) {
-                        while (phoneCursor.moveToNext()) {
-                            String phoneNumber = phoneCursor.getString(
-                                    phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                            
-                            contactsList.add(new Contact(name, phoneNumber, photoUri));
-                            break; // Just get the first phone number
-                        }
-                        phoneCursor.close();
+                if (phoneCursor != null) {
+                    while (phoneCursor.moveToNext()) {
+                        String phoneNumber = phoneCursor.getString(
+                                phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        
+                        contactsList.add(new Contact(name, phoneNumber, photoUri));
+                        break; // Just get the first phone number
                     }
+                    phoneCursor.close();
                 }
             }
-            cursor.close();
         }
-        
-        return contactsList;
+        cursor.close();
     }
+    
+    return contactsList;
+}
 }

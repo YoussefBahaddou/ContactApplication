@@ -5,22 +5,29 @@ import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> {
+public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> implements Filterable {
 
     private List<Contact> contactList;
+    private List<Contact> contactListFull;
     private Context context;
+    private TextView noResultsTextView;
 
-    public ContactAdapter(Context context, List<Contact> contactList) {
+    public ContactAdapter(Context context, List<Contact> contactList, TextView noResultsTextView) {
         this.context = context;
         this.contactList = contactList;
+        this.contactListFull = new ArrayList<>(contactList);
+        this.noResultsTextView = noResultsTextView;
     }
 
     @NonNull
@@ -61,8 +68,59 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
     public void updateContacts(List<Contact> contacts) {
         this.contactList = contacts;
+        this.contactListFull = new ArrayList<>(contacts);
         notifyDataSetChanged();
+        
+        // Update no results view
+        updateNoResultsView();
     }
+    
+    private void updateNoResultsView() {
+        if (contactList.isEmpty()) {
+            noResultsTextView.setVisibility(View.VISIBLE);
+        } else {
+            noResultsTextView.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public Filter getFilter() {
+        return contactFilter;
+    }
+
+    private Filter contactFilter = new Filter() {
+        @Override
+        protected FilterResults performFiltering(CharSequence constraint) {
+            List<Contact> filteredList = new ArrayList<>();
+
+            if (constraint == null || constraint.length() == 0) {
+                filteredList.addAll(contactListFull);
+            } else {
+                String filterPattern = constraint.toString().toLowerCase().trim();
+
+                for (Contact contact : contactListFull) {
+                    if (contact.getName().toLowerCase().contains(filterPattern) ||
+                            contact.getPhoneNumber().contains(filterPattern)) {
+                        filteredList.add(contact);
+                    }
+                }
+            }
+
+            FilterResults results = new FilterResults();
+            results.values = filteredList;
+            return results;
+        }
+
+        @Override
+        protected void publishResults(CharSequence constraint, FilterResults results) {
+            contactList.clear();
+            contactList.addAll((List) results.values);
+            notifyDataSetChanged();
+            
+            // Update no results view
+            updateNoResultsView();
+        }
+    };
 
     static class ContactViewHolder extends RecyclerView.ViewHolder {
         TextView nameTextView;
