@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
@@ -27,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.emsi.contactmanagingtp.api.RetrofitClient;
 import com.emsi.contactmanagingtp.model.ApiResponse;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import retrofit2.Call;
@@ -266,6 +268,11 @@ public class MainActivity extends AppCompatActivity {
         failureCount = 0;
         totalContacts = contactList.size();
 
+        if (totalContacts == 0) {
+            Toast.makeText(this, "No contacts to save", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Show progress
         Toast.makeText(this, "Starting to save " + totalContacts + " contacts...", Toast.LENGTH_SHORT).show();
 
@@ -277,6 +284,9 @@ public class MainActivity extends AppCompatActivity {
             // Convert to API contact
             com.emsi.contactmanagingtp.model.Contact apiContact = convertToApiContact(appContact);
 
+            // Log the contact being sent
+            Log.d("ContactAPI", "Sending contact: " + apiContact.getName() + ", " + apiContact.getNumber());
+
             // Make API call
             RetrofitClient.getInstance()
                     .getContactApiService()
@@ -285,9 +295,20 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
                             if (response.isSuccessful() && response.body() != null) {
+                                Log.d("ContactAPI", "Success: " + response.body().getMessage());
                                 successCount++;
                                 checkCompletion();
                             } else {
+                                // Log the error response
+                                String errorBody = "";
+                                try {
+                                    if (response.errorBody() != null) {
+                                        errorBody = response.errorBody().string();
+                                    }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                Log.e("ContactAPI", "Error: " + response.code() + " " + errorBody);
                                 failureCount++;
                                 checkCompletion();
                             }
@@ -295,6 +316,7 @@ public class MainActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<ApiResponse> call, Throwable t) {
+                            Log.e("ContactAPI", "Failure: " + t.getMessage(), t);
                             failureCount++;
                             checkCompletion();
                         }

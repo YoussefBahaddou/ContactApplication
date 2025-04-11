@@ -12,7 +12,7 @@ public class Contact {
     @SerializedName("number")
     private String number;
     
-    // Constructor for creating a new contact
+    // Constructor
     public Contact(String name, String number) {
         this.name = name;
         this.number = number;

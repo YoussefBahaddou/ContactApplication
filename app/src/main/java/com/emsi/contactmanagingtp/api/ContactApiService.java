@@ -11,6 +11,7 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 
 public interface ContactApiService {
+    // Make sure this matches your PHP endpoint exactly
     @POST("contacts/create.php")
     Call<ApiResponse> createContact(@Body Contact contact);
     
